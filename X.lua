@@ -7,6 +7,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 local PlaceId = game.PlaceId
 
 -- 🌸 สร้างหน้าต่าง UI ในธีม Mental Health App
@@ -88,6 +89,58 @@ Tabs.Support:AddButton({
         end
     end
 })
+
+-- 📍 ระบบวาร์ปไปหาโมเดลที่ระบุชื่อไว้
+local targetName = ""
+local autoTeleportEnabled = false
+
+Tabs.Settings:AddInput("TargetModelName", {
+    Title = "🧭 Target Model Name",
+    Placeholder = "กรอกชื่อที่อยู่ใน workspace",
+    Default = "",
+    Callback = function(text)
+        targetName = text
+    end
+})
+
+Tabs.Settings:AddToggle("Auto Teleport", {
+    Title = "📌 Auto Teleport To Target (ติดตามเป้าหมาย)",
+    Default = false,
+    Callback = function(state)
+        autoTeleportEnabled = state
+    end
+})
+
+Tabs.Settings:AddButton({
+    Title = "📍 Teleport to Target",
+    Description = "เทเลพอร์ตไปหาโมเดลที่กำหนดชื่อไว้ (ต้องมี HumanoidRootPart)",
+    Callback = function()
+        local target = workspace:FindFirstChild(targetName)
+        local character = LocalPlayer.Character
+        if target and target:FindFirstChild("HumanoidRootPart") then
+            if character and character:FindFirstChild("HumanoidRootPart") then
+                local hrp = target.HumanoidRootPart
+                local offset = hrp.CFrame.LookVector * -3
+                character.HumanoidRootPart.CFrame = CFrame.new(hrp.Position + offset, hrp.Position)
+            end
+        else
+            warn("ไม่พบโมเดลหรือไม่มี HumanoidRootPart")
+        end
+    end
+})
+
+-- วนลูปติดตามเป้าหมายหากเปิดใช้งาน
+RunService.RenderStepped:Connect(function()
+    if autoTeleportEnabled and targetName ~= "" then
+        local target = workspace:FindFirstChild(targetName)
+        local character = LocalPlayer.Character
+        if target and target:FindFirstChild("HumanoidRootPart") and character and character:FindFirstChild("HumanoidRootPart") then
+            local hrp = target.HumanoidRootPart
+            local offset = hrp.CFrame.LookVector * -3
+            character.HumanoidRootPart.CFrame = CFrame.new(hrp.Position + offset, hrp.Position)
+        end
+    end
+end)
 
 -- เมนูตั้งค่าเพิ่มเติม
 Tabs.Settings:AddParagraph({
