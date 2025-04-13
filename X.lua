@@ -14,9 +14,9 @@ local Window = Fluent:CreateWindow({
     Title = "🌸 Auto ALL Arcane Conquest",
     SubTitle = "Welcome, " .. LocalPlayer.Name,
     TabWidth = 180,
-    Size = UDim2.fromOffset(620, 480),
-    Acrylic = true, -- ใช้พื้นหลังเบลอสวยๆ แบบ 3D
-    Theme = "Light", -- ใช้โทนสว่างนุ่ม
+    Size = UDim2.fromOffset(620, 280),
+    Acrylic = true,
+    Theme = "Light",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
@@ -24,7 +24,8 @@ local Window = Fluent:CreateWindow({
 local Tabs = {
     CalmZone = Window:AddTab({ Title = "🧘 ออโต้", Icon = "🌿" }),
     Support = Window:AddTab({ Title = "🌈 จบเกม", Icon = "💬" }),
-    Settings = Window:AddTab({ Title = "⚙️ ตั้งค่า", Icon = "🔧" })
+    Settings = Window:AddTab({ Title = "⚙️ ตั้งค่า", Icon = "🔧" }),
+    Player = Window:AddTab({ Title = "👤 Player", Icon = "🎮" })
 }
 
 -- ฟังก์ชันกดคีย์แบบ soft delay
@@ -112,20 +113,15 @@ Tabs.Settings:AddButton({
 
         if success and servers and servers.data then
             local targetServer = nil
-
-            -- ค้นหาเซิร์ฟเวอร์ที่ไม่มีผู้เล่นหรือมีผู้เล่นน้อยที่สุด
             for _, server in ipairs(servers.data) do
                 if server.playing == 0 then
-                    -- หากเจอเซิร์ฟเวอร์ที่ไม่มีผู้เล่น
                     targetServer = server
                     break
                 elseif not targetServer or server.playing < targetServer.playing then
-                    -- ถ้าไม่มีเซิร์ฟเวอร์ที่ไม่มีผู้เล่น ให้เลือกเซิร์ฟเวอร์ที่มีผู้เล่นน้อยที่สุด
                     targetServer = server
                 end
             end
 
-            -- ถ้าเจอเซิร์ฟเวอร์ที่เหมาะสม
             if targetServer then
                 TeleportService:TeleportToPlaceInstance(PlaceId, targetServer.id, LocalPlayer)
             else
@@ -147,8 +143,6 @@ Tabs.Settings:AddButton({
 
         if success and servers and servers.data then
             local targetServer = nil
-
-            -- ค้นหาเซิร์ฟเวอร์ที่มีผู้เล่นสูงสุดที่สามารถเข้าร่วมได้
             for _, server in ipairs(servers.data) do
                 if server.playing < server.maxPlayers then
                     if not targetServer or server.playing > targetServer.playing then
@@ -157,7 +151,6 @@ Tabs.Settings:AddButton({
                 end
             end
 
-            -- ถ้าเจอเซิร์ฟเวอร์ที่เหมาะสม
             if targetServer then
                 TeleportService:TeleportToPlaceInstance(PlaceId, targetServer.id, LocalPlayer)
             else
@@ -168,6 +161,43 @@ Tabs.Settings:AddButton({
         end
     end
 })
+
+-- 👤 เมนู Player: Speed Boost
+local speedEnabled = false
+local previousWalkSpeed = nil
+
+Tabs.Player:AddToggle("🚀 Speed Boost", {
+    Title = "เพิ่มความเร็วขึ้น 120% จาก WalkSpeed ล่าสุด",
+    Default = false,
+    Callback = function(state)
+        speedEnabled = state
+
+        local character = LocalPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            local humanoid = character:FindFirstChild("Humanoid")
+
+            if state then
+                previousWalkSpeed = humanoid.WalkSpeed
+                humanoid.WalkSpeed = previousWalkSpeed * 2.2
+            else
+                if previousWalkSpeed then
+                    humanoid.WalkSpeed = previousWalkSpeed
+                end
+            end
+        end
+    end
+})
+
+LocalPlayer.CharacterAdded:Connect(function(character)
+    character:WaitForChild("Humanoid")
+    if speedEnabled and previousWalkSpeed then
+        task.wait(0.5)
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = previousWalkSpeed * 1.5
+        end
+    end
+end)
 
 -- UI Toggle Key
 local uiVisible = true
